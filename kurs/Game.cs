@@ -121,7 +121,6 @@ namespace kurs
             float centerBlokX = currentBlok.X + currentBlok.Width / 2; float CenterBlockY = currentBlok.Y + currentBlok.Height / 2; // центр вписанной окружности в блок
             float centerBallX = ball2.X + ball2.Width / 2; float centerBallY = ball2.Y + ball2.Height / 2; // центр вписанной окружности в снаряд
             float x = Math.Abs(centerBlokX - centerBallX); float y = Math.Abs(CenterBlockY - centerBallY); // расчёт расстояния между центрами
-
             if(x>y) // определение плоскости столкновения в данном случае если true то это либо право либо лево
             {
                 if (centerBallX > centerBlokX) // справа
@@ -135,7 +134,6 @@ namespace kurs
                     dy = Math.Abs(dy);
                 else // вверх
                     dy = -Math.Abs(dy);
-
             }
         }
         
@@ -201,7 +199,7 @@ namespace kurs
         int kolvo, BufferID;
         //float r, xCentr, yCentr, x, y;
         float[] cords;
-        float x, y, width, height;
+        float width, height;
         Color4 color;
 
         public float[] Cords { get => cords; set => cords = value; }
@@ -234,8 +232,6 @@ namespace kurs
         //}
         public Ball(float x, float y, float width, float height, Color4 color,bool s)
         {
-            this.x = x;
-            this.y = y;
             this.width = width;
             this.height = height;
             this.color = color;
