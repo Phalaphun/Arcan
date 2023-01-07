@@ -10,7 +10,7 @@ namespace kurs
             GameWindowSettings gSettings = GameWindowSettings.Default;
             NativeWindowSettings nSettings = new NativeWindowSettings()
             {
-                Title = "Лабораторная работа №4",
+                Title = "Acranoid",
                 Size = (800, 600),
                 Flags = ContextFlags.Default,
                 Profile = ContextProfile.Compatability,
