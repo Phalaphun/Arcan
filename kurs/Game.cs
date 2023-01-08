@@ -22,7 +22,7 @@ namespace kurs
         int dx, dy, ortoWidth = 600, ortoHeight = 800, ballTextureID, brickTextureID,uberBrickTextureID, StartGameID, CloseGameID, Level1ID,Level2ID,scores, GameOverID,GameWinID;
         double deltaX, deltaY;
         Vector2 cursor;
-        bool gameOver = false, isPaused = false, start=true, levelChoose=false,level=false, clearButtons=false, gameWin=false;
+        bool gameOver = false, isPaused = false, levelChoose=false,level=false, clearButtons=false, gameWin=false;
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeSettings)
         : base(gameWindowSettings, nativeSettings)
         {
@@ -100,10 +100,16 @@ namespace kurs
                 switch (e.Key)
                 {
                     case Keys.A:
-                        paddle.Move(new Vector2(-8f, 0));
+                        if (!isPaused)
+                        {
+                            paddle.Move(new Vector2(-8f, 0)); 
+                        }
                         break;
                     case Keys.D:
-                        paddle.Move(new Vector2(8f, 0));
+                        if (!isPaused)
+                        {
+                            paddle.Move(new Vector2(8f, 0)); 
+                        }
                         break;
                     case Keys.P:
                         isPaused = !isPaused;
@@ -341,7 +347,6 @@ namespace kurs
         }
         private void Start()
         {
-            start = false;
             levelChoose = true;
             clearButtons = true;
             foreach (var but in buttons)
@@ -399,7 +404,6 @@ namespace kurs
         private void ReturnToMainMenu()
         {
             level = false;   
-            start = true;
             levelChoose = false;
             clearButtons = false;
             foreach (var but in buttons)
@@ -576,8 +580,8 @@ namespace kurs
                 ImageLockMode.ReadOnly,
                 System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-                data.Width, data.Height, 0,
+            GL.TexImage2D(TextureTarget.Texture2D,0, PixelInternalFormat.Rgba,
+                data.Width, data.Height,0,
                 OpenTK.Graphics.OpenGL.PixelFormat.Bgra,
                 PixelType.UnsignedByte,
                 data.Scan0);
