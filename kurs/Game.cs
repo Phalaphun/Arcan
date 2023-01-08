@@ -274,16 +274,6 @@ namespace kurs
         }
         public void Draw()
         {
-            //GL.EnableClientState(ArrayCap.VertexArray);
-            //GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);
-
-            //GL.VertexPointer(2, VertexPointerType.Float,0,0);
-
-            //GL.Color4(color);
-            //GL.DrawArrays(PrimitiveType.Polygon,0,4);
-
-            //GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            //GL.DisableClientState(ArrayCap.VertexArray);
 
             GL.Enable(EnableCap.Texture2D);
             GL.Enable(EnableCap.Blend);// Подключаем режим отображения текстур для работы с прозрачностью
