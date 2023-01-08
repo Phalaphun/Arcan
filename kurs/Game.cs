@@ -20,7 +20,7 @@ namespace kurs
         bool gameOver = false;
         int ortoWidth = 600;
         int ortoHeight = 800;
-        int ballTextureID, BrickTextureID;
+        int ballTextureID, brickTextureID;
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeSettings)
         : base(gameWindowSettings, nativeSettings)
         {
@@ -33,10 +33,13 @@ namespace kurs
             GL.Ortho(0, ortoWidth, 0, ortoHeight, -1, 1); // 0;0 находится в левом нижнем углу. У направлена вверх, х - направо. Перемножаю матрицу на новую.
             GL.MatrixMode(MatrixMode.Modelview); // Выбираю снова глобальную матрицу 
 
+            ballTextureID = ContentPipe.LoadTexture(@"Content\ball.png");
+            brickTextureID = ContentPipe.LoadTexture(@"Content\brick.jpg");
+
             VSync = VSyncMode.On;
             base.OnLoad();
-            ball = new Ball(300, 30, 10, 10, Color4.Yellow);
-            paddle = new Paddle(250, 10, 100, 10, Color4.Aqua);
+            ball = new Ball(300, 30, 10, 10, Color4.Yellow, ballTextureID);
+            paddle = new Paddle(250, 10, 100, 10, Color4.Aqua, brickTextureID);
             rnd = new Random();
             dx = rnd.Next(-3, 3);
             dy = 1;
@@ -44,12 +47,11 @@ namespace kurs
             {
                 for(int j=0;j<8;j++)
                 {
-                    blocks.Add(new Blok(50+60*j,350+60*i,50,50,Color4.DarkMagenta));
+                    blocks.Add(new Blok(50+60*j,350+60*i,50,50,Color4.DarkMagenta, brickTextureID));
                 }
             }
 
-            ballTextureID = ContentPipe.LoadTexture(@"Content\ball.png");
-            BrickTextureID = ContentPipe.LoadTexture(@"Content\brick.jpg");
+            
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
@@ -67,7 +69,7 @@ namespace kurs
                 }
                 if (delBlock != null)
                 {
-                    delBlock.DeleteVBO();
+                    delBlock.Delete();
                     blocks.Remove(delBlock);
                     delBlock = null;
                 }
@@ -101,19 +103,21 @@ namespace kurs
         {
             base.OnUnload();
             foreach (var blok in blocks)
-                blok.DeleteVBO();
-            ball.DeleteVBO();
-            paddle.DeleteVBO();
+                blok.Delete();
+            ball.Delete();
+            paddle.Delete();
+            GL.DeleteTexture(ballTextureID);
+            GL.DeleteTexture(brickTextureID);
         }
 
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             foreach (var blok in blocks)
-                blok.DrawVBO();
-            ball.DrawVBO();
-            paddle.DrawVBO();
+                blok.Draw();
+            ball.Draw();
+            paddle.Draw();
             SwapBuffers();
         }
         protected override void OnResize(ResizeEventArgs e)
@@ -220,44 +224,94 @@ namespace kurs
     {
         float x, y, height, width;
         Color4 color;
-        protected int BufferID;
+        protected int bufferCordsID, bufferTextureID, vaoID, textureID;
         bool status = true;
-        protected float[] cords;
+        protected float[] cords, textCords;
         public bool Status { get => status; set => status = value; }
         public virtual float X { get => x; set => x = value; }
         public virtual float Y { get => y; set => y = value; }
         public float Height { get => height; set => height = value; }
         public float Width { get => width; set => width = value; }
         public Blok() { }
-        public Blok(float x, float y, float width, float height, Color4 color)
+        public Blok(float x, float y, float width, float height, Color4 color, int textureID)
         {
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
             this.color = color;
+            this.textureID = textureID;
             cords = new float[] { x, y, x, y + height, x + width, y + height, x + width, y };
-            BufferID = GL.GenBuffer();// генерация индефикатора
-            GL.BindBuffer(BufferTarget.ArrayBuffer, BufferID);//тип буфера, индефикатор
+            textCords = new float[] {0f,1f,0f,0f,1f,0f,1f,1f };
+            bufferCordsID = GL.GenBuffer();// генерация индефикатора
+            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);//тип буфера, индефикатор
             GL.BufferData(BufferTarget.ArrayBuffer, cords.Length * sizeof(float), cords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-        }
-        public void DrawVBO()
-        {
-            GL.EnableClientState(ArrayCap.VertexArray);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, BufferID);
 
-            GL.VertexPointer(2, VertexPointerType.Float,0,0);
-
-            GL.Color4(color);
-            GL.DrawArrays(PrimitiveType.Polygon,0,4);
-
+            GL.BindTexture(TextureTarget.Texture2D, textureID);
+            bufferTextureID = GL.GenBuffer(); // генерация идефикатора для текстурного массива
+            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferTextureID);
+            GL.BufferData(BufferTarget.ArrayBuffer, textCords.Length * sizeof(float), textCords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
+            vaoID = GL.GenVertexArray();
+            GL.BindVertexArray(vaoID);
+            GL.EnableClientState(ArrayCap.VertexArray);
+            GL.EnableClientState(ArrayCap.TextureCoordArray);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferTextureID);
+            GL.TexCoordPointer(2, TexCoordPointerType.Float, 0, 0);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);
+            GL.VertexPointer(2, VertexPointerType.Float, 0, 0);
+
+            GL.BindVertexArray(0);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+
             GL.DisableClientState(ArrayCap.VertexArray);
+            GL.DisableClientState(ArrayCap.TextureCoordArray);
+
         }
-        public void DeleteVBO()
+        public void Draw()
         {
-            GL.DeleteBuffer(BufferID);
+            //GL.EnableClientState(ArrayCap.VertexArray);
+            //GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);
+
+            //GL.VertexPointer(2, VertexPointerType.Float,0,0);
+
+            //GL.Color4(color);
+            //GL.DrawArrays(PrimitiveType.Polygon,0,4);
+
+            //GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            //GL.DisableClientState(ArrayCap.VertexArray);
+
+            GL.Enable(EnableCap.Texture2D);
+            GL.Enable(EnableCap.Blend);// Подключаем режим отображения текстур для работы с прозрачностью
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha); // делаем так чтобы прозрачность была прозрачной а не просто белой 
+            GL.EnableClientState(ArrayCap.VertexArray);
+            GL.EnableClientState(ArrayCap.TextureCoordArray);
+
+            GL.BindTexture(TextureTarget.Texture2D, textureID);
+
+            GL.BindVertexArray(vaoID);
+           
+            GL.DrawArrays(PrimitiveType.Polygon, 0, 4);
+            GL.BindVertexArray(0);
+
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
+            GL.Disable(EnableCap.Blend);
+            GL.DisableClientState(ArrayCap.VertexArray);
+            GL.DisableClientState(ArrayCap.TextureCoordArray);
+            GL.Disable(EnableCap.Texture2D);
+
+        }
+        
+        public void Delete()
+        {
+            GL.DeleteBuffer(bufferCordsID);
+            GL.DeleteBuffer(bufferTextureID);
+            GL.DeleteVertexArray(vaoID);
         }
         public virtual bool IsPointIn(float pointX, float pointY)
         {
@@ -273,7 +327,7 @@ namespace kurs
         public float[] Cords { get => cords; set => cords = value; }
         public override float  X { get => cords[0]; set => cords[0] = value; }
         public override float Y { get => cords[1]; set => cords[1] = value; }
-        public Ball(float x, float y, float width, float height, Color4 color) : base (x,y,width,height,color)
+        public Ball(float x, float y, float width, float height, Color4 color, int textureID) : base (x,y,width,height,color, textureID)
         {
 
         }
@@ -284,7 +338,7 @@ namespace kurs
                 cords[i] += vector.X;
                 cords[i + 1] += vector.Y;
             }
-            GL.BindBuffer(BufferTarget.ArrayBuffer, BufferID);//тип буфера, индефикатор
+            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);//тип буфера, индефикатор
             GL.BufferData(BufferTarget.ArrayBuffer, cords.Length * sizeof(float), cords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
@@ -293,7 +347,7 @@ namespace kurs
     {
         public override float X { get => cords[0]; set => cords[0] = value; }
         public override float Y { get => cords[1]; set => cords[1] = value; }
-        public Paddle(float x, float y, float width, float height, Color4 color) : base(x,y,width,height,color)
+        public Paddle(float x, float y, float width, float height, Color4 color, int textureID) : base(x,y,width,height,color, textureID)
         {
 
         }
@@ -304,7 +358,7 @@ namespace kurs
                 cords[i] += vector.X;
                 cords[i + 1] += vector.Y;
             }
-            GL.BindBuffer(BufferTarget.ArrayBuffer, BufferID);//тип буфера, индефикатор
+            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);//тип буфера, индефикатор
             GL.BufferData(BufferTarget.ArrayBuffer, cords.Length * sizeof(float), cords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
@@ -337,7 +391,7 @@ namespace kurs
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
                 data.Width, data.Height, 0,
-                OpenTK.Graphics.OpenGL.PixelFormat.Rgba,
+                OpenTK.Graphics.OpenGL.PixelFormat.Bgra,
                 PixelType.UnsignedByte,
                 data.Scan0);
 
@@ -349,7 +403,10 @@ namespace kurs
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
             return id;
         }
+        
     }
 }
