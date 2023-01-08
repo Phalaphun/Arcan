@@ -45,9 +45,9 @@ namespace kurs
 
             GameOverID = ContentPipe.LoadTexture(@"Content\Lose.png");
             GameWinID = ContentPipe.LoadTexture(@"Content\Win.png");
-            gameOverButton = new Button(230, 500, 100, 100, Color4.Gray, GameOverID);
+            gameOverButton = new Button(230, 500, 100, 100, GameOverID);
             gameOverButton.OnMouseDown += ReturnToMainMenu;
-            gameWinButton = new Button(230, 500, 100, 100, Color4.Gray, GameWinID);
+            gameWinButton = new Button(230, 500, 100, 100, GameWinID);
             gameWinButton.OnMouseDown += ReturnToMainMenu;
             VSync = VSyncMode.On;
             base.OnLoad();
@@ -66,9 +66,9 @@ namespace kurs
             }
             if(levelChoose)
             {
-                buttons.Add(new Button(230, 500, 100, 100, Color4.Gray, Level1ID));
-                buttons.Add(new Button(230, 300, 100, 100, Color4.Gray, Level2ID));
-                buttons.Add(new Button(230, 100, 100, 100, Color4.Gray, CloseGameID));
+                buttons.Add(new Button(230, 500, 100, 100,  Level1ID));
+                buttons.Add(new Button(230, 300, 100, 100, Level2ID));
+                buttons.Add(new Button(230, 100, 100, 100, CloseGameID));
                 buttons[0].OnMouseDown += Level1;
                 buttons[1].OnMouseDown += Level2;
                 buttons[2].OnMouseDown += CloseGame;
@@ -335,8 +335,8 @@ namespace kurs
         }
         private void StartScreen()
         {
-            buttons.Add(new Button(230, 500, 100, 100, Color4.Gray, StartGameID));
-            buttons.Add(new Button(230, 300, 100, 100, Color4.Gray, CloseGameID));
+            buttons.Add(new Button(230, 500, 100, 100,  StartGameID));
+            buttons.Add(new Button(230, 300, 100, 100,  CloseGameID));
             buttons[1].OnMouseDown += CloseGame;
             buttons[0].OnMouseDown += Start;
         }
@@ -359,8 +359,8 @@ namespace kurs
             foreach (var but in buttons)
                 but.Delete();
             clearButtons = true;
-            ball = new Ball(300, 30, 10, 10, Color4.Yellow, ballTextureID);
-            paddle = new Paddle(250, 10, 100, 10, Color4.Aqua, brickTextureID, ortoWidth);
+            ball = new Ball(300, 30, 10, 10, ballTextureID);
+            paddle = new Paddle(250, 10, 100, 10, brickTextureID, ortoWidth);
 
             dx = rnd.Next(-3, 3);
             dy = 1;
@@ -368,7 +368,7 @@ namespace kurs
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    blocks.Add(new Blok(50 + 60 * j, 350 + 60 * i, 50, 50, Color4.DarkMagenta, brickTextureID));
+                    blocks.Add(new Blok(50 + 60 * j, 350 + 60 * i, 50, 50, brickTextureID));
                 }
             }
         }
@@ -379,8 +379,8 @@ namespace kurs
             foreach (var but in buttons)
                 but.Delete();
             clearButtons = true;
-            ball = new Ball(300, 30, 10, 10, Color4.Yellow, ballTextureID);
-            paddle = new Paddle(250, 10, 100, 10, Color4.Aqua, brickTextureID, ortoWidth);
+            ball = new Ball(300, 30, 10, 10, ballTextureID);
+            paddle = new Paddle(250, 10, 100, 10, brickTextureID, ortoWidth);
             dx = rnd.Next(-3, 3);
             dy = 1;
             for (int i = 0; i < 6; i++)
@@ -389,16 +389,16 @@ namespace kurs
                 {
                     if (i == 0 && j == 0 || i == 0 && j == 7 || i == 5 && j == 0 || i == 5 && j == 7)
                         continue;
-                    blocks.Add(new Blok(50 + 60 * j, 350 + 60 * i, 50, 50, Color4.DarkMagenta, brickTextureID));
+                    blocks.Add(new Blok(50 + 60 * j, 350 + 60 * i, 50, 50, brickTextureID));
                 }
             }
-            uberBlocks.Add(new Blok(50 + 60 * 0, 350 + 60 * 0, 50, 50, Color4.DarkMagenta, uberBrickTextureID));
-            uberBlocks.Add(new Blok(50 + 60 * 7, 350 + 60 * 0, 50, 50, Color4.DarkMagenta, uberBrickTextureID));
-            uberBlocks.Add(new Blok(50 + 60 * 7, 350 + 60 * 5, 50, 50, Color4.DarkMagenta, uberBrickTextureID));
-            uberBlocks.Add(new Blok(50 + 60 * 0, 350 + 60 * 5, 50, 50, Color4.DarkMagenta, uberBrickTextureID));
+            uberBlocks.Add(new Blok(50 + 60 * 0, 350 + 60 * 0, 50, 50, uberBrickTextureID));
+            uberBlocks.Add(new Blok(50 + 60 * 7, 350 + 60 * 0, 50, 50, uberBrickTextureID));
+            uberBlocks.Add(new Blok(50 + 60 * 7, 350 + 60 * 5, 50, 50, uberBrickTextureID));
+            uberBlocks.Add(new Blok(50 + 60 * 0, 350 + 60 * 5, 50, 50, uberBrickTextureID));
             for(int i=0;i<10;i+=2)
             {
-                uberBlocks.Add(new Blok(50 + 60 * i, 250 , 50, 50, Color4.DarkMagenta, uberBrickTextureID));
+                uberBlocks.Add(new Blok(50 + 60 * i, 250 , 50, 50, uberBrickTextureID));
             }
         }
         private void ReturnToMainMenu()
@@ -432,13 +432,13 @@ namespace kurs
         public float Height { get => height; set => height = value; }
         public float Width { get => width; set => width = value; }
         public Blok() { }
-        public Blok(float x, float y, float width, float height, Color4 color, int textureID)
+        public Blok(float x, float y, float width, float height, int textureID)
         {
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
-            this.color = color;
+            
             this.textureID = textureID;
             cords = new float[] { x, y, x, y + height, x + width, y + height, x + width, y };
             textCords = new float[] { 0f, 1f, 0f, 0f, 1f, 0f, 1f, 1f };
@@ -513,7 +513,7 @@ namespace kurs
         public float[] Cords { get => cords; set => cords = value; }
         public override float X { get => cords[0]; set => cords[0] = value; }
         public override float Y { get => cords[1]; set => cords[1] = value; }
-        public Ball(float x, float y, float width, float height, Color4 color, int textureID) : base(x, y, width, height, color, textureID)
+        public Ball(float x, float y, float width, float height, int textureID) : base(x, y, width, height, textureID)
         {
         }
         public void Move(Vector2 vector)
@@ -533,7 +533,7 @@ namespace kurs
         public override float X { get => cords[0]; set => cords[0] = value; }
         public override float Y { get => cords[1]; set => cords[1] = value; }
         int ortoWidth;
-        public Paddle(float x, float y, float width, float height, Color4 color, int textureID, int ortoWidth) : base(x, y, width, height, color, textureID)
+        public Paddle(float x, float y, float width, float height, int textureID, int ortoWidth) : base(x, y, width, height, textureID)
         {
             this.ortoWidth = ortoWidth;
         }
@@ -604,7 +604,7 @@ namespace kurs
         float x, y, width, height;
         Color4 color;
         public MouseDelegate OnMouseDown;
-        public Button(float x, float y, float width, float height, Color4 color, int textureID) : base(x, y, width, height, color, textureID)
+        public Button(float x, float y, float width, float height, int textureID) : base(x, y, width, height, textureID)
         {
         }
         public override bool IsPointIn(float pointX, float pointY)
