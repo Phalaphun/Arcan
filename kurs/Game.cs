@@ -16,11 +16,15 @@ namespace kurs
         Paddle paddle;
         Random rnd;
         List<Blok> blocks = new List<Blok>();
-        int dx, dy;
-        bool gameOver = false;
-        int ortoWidth = 600;
-        int ortoHeight = 800;
-        int ballTextureID, brickTextureID;
+        List<Blok> uberBlocks = new List<Blok>();
+        List<Button> buttons = new List<Button>();
+        Button gameOverButton;
+        Button gameWinButton;
+        int dx, dy, ortoWidth = 600, ortoHeight = 800, ballTextureID, brickTextureID,uberBrickTextureID, StartGameID, CloseGameID, Level1ID,Level2ID,scores, GameOverID,GameWinID;
+        public int OrtoWidth { get; }
+        double deltaX, deltaY;
+        Vector2 cursor;
+        bool gameOver = false, isPaused = false, start=true, levelChoose=false,firstLevel=false,secondLevel=false, clearButtons=false, gameWin=false;
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeSettings)
         : base(gameWindowSettings, nativeSettings)
         {
@@ -35,68 +39,87 @@ namespace kurs
 
             ballTextureID = ContentPipe.LoadTexture(@"Content\ball.png");
             brickTextureID = ContentPipe.LoadTexture(@"Content\brick.jpg");
+            uberBrickTextureID = ContentPipe.LoadTexture(@"Content\UberBlock.png");
+            StartGameID = ContentPipe.LoadTexture(@"Content\Start.png");
+            CloseGameID = ContentPipe.LoadTexture(@"Content\Close.png");
+            Level1ID = ContentPipe.LoadTexture(@"Content\1Level.png");
+            Level2ID = ContentPipe.LoadTexture(@"Content\2Level.png");
 
+            GameOverID = ContentPipe.LoadTexture(@"Content\Lose.png");
+            GameWinID = ContentPipe.LoadTexture(@"Content\Win.png");
+            gameOverButton = new Button(230, 500, 100, 100, Color4.Gray, GameOverID);
+            gameOverButton.OnMouseDown += ReturnToMainMenu;
+            gameWinButton = new Button(230, 500, 100, 100, Color4.Gray, GameWinID);
+            gameWinButton.OnMouseDown += ReturnToMainMenu;
             VSync = VSyncMode.On;
             base.OnLoad();
-            ball = new Ball(300, 30, 10, 10, Color4.Yellow, ballTextureID);
-            paddle = new Paddle(250, 10, 100, 10, Color4.Aqua, brickTextureID);
-            rnd = new Random();
-            dx = rnd.Next(-3, 3);
-            dy = 1;
-            for (int i = 0; i< 6; i++)
-            {
-                for(int j=0;j<8;j++)
-                {
-                    blocks.Add(new Blok(50+60*j,350+60*i,50,50,Color4.DarkMagenta, brickTextureID));
-                }
-            }
-
             
+            rnd = new Random();
+            
+            StartScreen(); 
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
-            if (!gameOver)
+            if(clearButtons)
             {
-                Blok delBlock = null;
-                foreach (var blok in blocks)
+                buttons.Clear();
+                clearButtons = false;
+            }
+            if(levelChoose)
+            {
+                buttons.Add(new Button(230, 500, 100, 100, Color4.Gray, Level1ID));
+                buttons.Add(new Button(230, 300, 100, 100, Color4.Gray, Level2ID));
+                buttons.Add(new Button(230, 100, 100, 100, Color4.Gray, CloseGameID));
+                buttons[0].OnMouseDown += Level1;
+                buttons[1].OnMouseDown += Level2;
+                buttons[2].OnMouseDown += CloseGame;
+                levelChoose = false;
+            }
+            if(firstLevel||secondLevel)
+            {
+                GameMaster();
+            }
+
+            
+            
+        }
+        protected override void OnRenderFrame(FrameEventArgs args)
+        {
+            base.OnRenderFrame(args);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            //GameMasterRender();
+            if(firstLevel || secondLevel)
+            {
+                GameMasterRender();
+            }
+            ButtonRender();
+            SwapBuffers();
+        }
+        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (gameOver)
+                return;
+            else
+            {
+                switch (e.Key)
                 {
-                    if (blok.Status == false)
-                    {
-                        delBlock = blok;
-                        
-                    }
+                    case Keys.A:
+                        paddle.Move(new Vector2(-6f, 0));
+                        break;
+                    case Keys.D:
+                        paddle.Move(new Vector2(6f, 0));
+                        break;
+                    case Keys.P:
+                        isPaused = !isPaused;
+                        break;
+                    case Keys.Escape:
+                        CloseGame();
+                        break;
+
                 }
-                if (delBlock != null)
-                {
-                    delBlock.Delete();
-                    blocks.Remove(delBlock);
-                    delBlock = null;
-                }
-                
-                if (KeyboardState.IsKeyDown(Keys.Escape))
-                    Close();
-                if (KeyboardState.IsKeyDown(Keys.Right))
-                    ball.Move(new Vector2(1f, 0));
-                if (KeyboardState.IsKeyDown(Keys.Left))
-                    ball.Move(new Vector2(-1f, 0));
-                if (KeyboardState.IsKeyDown(Keys.Down))
-                    ball.Move(new Vector2(0, -1f));
-                if (KeyboardState.IsKeyDown(Keys.Up))
-                    ball.Move(new Vector2(0, 1f));
-                if (KeyboardState.IsKeyDown(Keys.E))
-                    dx = rnd.Next(-3, 3);
-                if(KeyboardState.IsKeyDown(Keys.A))
-                    paddle.Move(new Vector2(-1f, 0));
-                if (KeyboardState.IsKeyDown(Keys.D))
-                    paddle.Move(new Vector2(1f, 0));
-                //if (KeyboardState.IsKeyDown(Keys.R))
-                //{
-                //    ball.Move(new Vector2(dx/2f, dy/2f));
-                //}
-                ball.Move(new Vector2(dx / 2f, dy / 2f));
-                CheackAllBlocks();
-                BallCollisionOnWallsAndPaddleChecker();
             }
         }
         protected override void OnUnload()
@@ -104,26 +127,53 @@ namespace kurs
             base.OnUnload();
             foreach (var blok in blocks)
                 blok.Delete();
-            ball.Delete();
-            paddle.Delete();
+            foreach (var blok in uberBlocks)
+                blok.Delete();
+            if (ball != null || paddle!=null)
+            {
+                ball.Delete();
+                paddle.Delete(); 
+            }
             GL.DeleteTexture(ballTextureID);
             GL.DeleteTexture(brickTextureID);
-        }
-
-        protected override void OnRenderFrame(FrameEventArgs args)
-        {
-            base.OnRenderFrame(args);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            foreach (var blok in blocks)
-                blok.Draw();
-            ball.Draw();
-            paddle.Draw();
-            SwapBuffers();
+            GL.DeleteTexture(uberBrickTextureID);
+            GL.DeleteTexture(StartGameID);
+            GL.DeleteTexture(CloseGameID);
+            GL.DeleteTexture(Level1ID);
+            GL.DeleteTexture(Level2ID);
+            GL.DeleteTexture(GameOverID);
+            GL.DeleteTexture(GameWinID);
+            gameWinButton.Delete();
+            gameOverButton.Delete();
         }
         protected override void OnResize(ResizeEventArgs e)
         {
+            deltaX = e.Width / (float)ortoWidth;
+            deltaY = e.Height / (float)ortoHeight;
             base.OnResize(e);
             GL.Viewport(0, 0, e.Width, e.Height);
+        }
+        protected override void OnMouseMove(MouseMoveEventArgs e)
+        {
+            base.OnMouseMove(e);
+            cursor = new Vector2((float)(e.Position.X / deltaX), (float)ortoHeight - (float)(e.Position.Y / deltaY));
+        }
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseDown(e);
+            foreach(var but in buttons)
+            {
+                if(but.IsPointIn(cursor.X,cursor.Y))
+                {
+                    but.OnMouseDown?.Invoke();
+                }
+            }
+            if (gameOver)
+                if (gameOverButton.IsPointIn(cursor.X, cursor.Y))
+                    gameOverButton.OnMouseDown?.Invoke();
+            if (gameWin)
+                if (gameOverButton.IsPointIn(cursor.X, cursor.Y))
+                    gameOverButton.OnMouseDown?.Invoke();
         }
         private void CheackAllBlocks()
         {
@@ -134,6 +184,16 @@ namespace kurs
                     if (block.IsPointIn(ball.Cords[i], ball.Cords[i + 1]))
                     {
                         block.Status = false;
+                        ChangeBallVector(block);
+                    }
+                }
+            }
+            foreach (var block in uberBlocks)
+            {
+                for (int i = 0; i < ball.Cords.Length; i += 2)
+                {
+                    if (block.IsPointIn(ball.Cords[i], ball.Cords[i + 1]))
+                    {
                         ChangeBallVector(block);
                     }
                 }
@@ -169,45 +229,33 @@ namespace kurs
                 dy = -Math.Abs(dy);
             if (ball.Cords[1] <= 0) // что делаем если шарик упал
             {
-                //gameOver = true;
+                gameOver = true;
             }
 
-            for (int i = 0; i < ball.Cords.Length; i+=2)
+            for (int i = 0; i < ball.Cords.Length; i += 2)
             {
                 if (paddle.IsPointIn(ball.Cords[i], ball.Cords[i + 1]))
                 {
                     float ballCenterX = ball.X + ball.Width / 2;
-                    //if (ball.X > paddle.X && ball.X < paddle.X + paddle.Width / 3 || ball.X+ball.Width > paddle.X && ball.X+ ball.Width < paddle.X + paddle.Width / 3)
-                    //{
-                    //    Debug.WriteLine("Первая треть"); dy = Math.Abs(dy); dx = -Math.Abs(dx);
-                    //}
-                    //else if (ball.X > paddle.X + paddle.Width / 3 && ball.X < paddle.X + 2 * paddle.Width / 3 || ball.X + ball.Width > paddle.X + paddle.Width / 3 && ball.X + ball.Width < paddle.X + 2 * paddle.Width / 3)
-                    //{
-                    //    Debug.WriteLine("Вторая треть"); dy = Math.Abs(dy); dx = 0;
-                    //}
-                    //else if (ball.X > paddle.X + 2 * paddle.Width / 3 && ball.X < paddle.X + paddle.Width || ball.X + ball.Width > paddle.X + 2 * paddle.Width / 3 && ball.X + ball.Width < paddle.X + paddle.Width)
-                    //{
-                    //    Debug.WriteLine("Третья треть"); dy = +Math.Abs(dy); dx = +Math.Abs(dx);
-                    //}
                     if (ballCenterX > paddle.X && ballCenterX < paddle.X + paddle.Width / 3)
                     {
-                        Debug.WriteLine("Первая треть"); dy = Math.Abs(dy); dx = -Math.Abs(dx);
+                        Debug.WriteLine("Первая треть"); dy = 1; dx = -3;
                     }
                     else if (ballCenterX > paddle.X + paddle.Width / 3 && ballCenterX < paddle.X + 2 * paddle.Width / 3)
                     {
-                        Debug.WriteLine("Вторая треть"); dy = Math.Abs(dy); dx = 0;
+                        Debug.WriteLine("Вторая треть"); dy = 1; dx = 0;
                     }
                     else if (ballCenterX > paddle.X + 2 * paddle.Width / 3 && ballCenterX < paddle.X + paddle.Width)
                     {
-                        Debug.WriteLine("Третья треть"); dy = +Math.Abs(dy); dx = +Math.Abs(dx);
+                        Debug.WriteLine("Третья треть"); dy = +1; dx = +1;
                     }
                     else if (ball.X > paddle.X + 2 * paddle.Width / 3 && ball.X < paddle.X + paddle.Width)
                     {
-                        Debug.WriteLine("Третья треть"); dy = +Math.Abs(dy); dx = +Math.Abs(dx);
+                        Debug.WriteLine("Третья треть"); dy = +1; dx = +1;
                     }
                     else if (ball.X + ball.Width > paddle.X && ball.X < paddle.X + paddle.Width / 3)
                     {
-                        Debug.WriteLine("Первая треть"); dy = Math.Abs(dy); dx = -Math.Abs(dx);
+                        Debug.WriteLine("Первая треть"); dy = 1; dx = -3;
                     }
 
 
@@ -215,10 +263,172 @@ namespace kurs
             }
 
         }
+        private void ButtonRender()
+        {
+            foreach (var but in buttons)
+            {
+                but.Draw();
+            }
+        }
+        private void GameMaster()
+        {
+            if (!isPaused)
+            {
+                if (!gameOver && !gameWin)
+                {
+                    Blok delBlock = null;
+                    foreach (var blok in blocks)
+                    {
+                        if (blok.Status == false)
+                        {
+                            delBlock = blok;
+
+                        }
+                    }
+                    if (delBlock != null)
+                    {
+                        delBlock.Delete();
+                        blocks.Remove(delBlock);
+                        scores += 10;
+                        Title = "Acranoid           Scores: " + scores.ToString();
+                        delBlock = null;
+                    }
+
+                    if (KeyboardState.IsKeyDown(Keys.Right))
+                        ball.Move(new Vector2(1f, 0));
+                    if (KeyboardState.IsKeyDown(Keys.Left))
+                        ball.Move(new Vector2(-1f, 0));
+                    if (KeyboardState.IsKeyDown(Keys.Down))
+                        ball.Move(new Vector2(0, -1f));
+                    if (KeyboardState.IsKeyDown(Keys.Up))
+                        ball.Move(new Vector2(0, 1f));
+                    if (KeyboardState.IsKeyDown(Keys.E))
+                        dx = rnd.Next(-3, 3);
+
+
+                    ball.Move(new Vector2(dx / 2f, dy / 2f));
+
+                    CheackAllBlocks();
+                    BallCollisionOnWallsAndPaddleChecker();
+                    if (blocks.Count == 0)
+                    {
+                        gameWin = true;
+                    }
+
+                }
+            }
+        }
+        private void GameMasterRender()
+        {
+            foreach (var blok in blocks)
+                blok.Draw();
+            foreach (var blok in uberBlocks)
+                blok.Draw();
+            ball.Draw();
+            paddle.Draw();
+            if (gameOver)
+            {
+                gameOverButton.Draw();
+            }
+            if (gameWin)
+            {
+                gameWinButton.Draw();
+            }
+        }
+        private void StartScreen()
+        {
+            buttons.Add(new Button(230, 500, 100, 100, Color4.Gray, StartGameID));
+            buttons.Add(new Button(230, 300, 100, 100, Color4.Gray, CloseGameID));
+            buttons[1].OnMouseDown += CloseGame;
+            buttons[0].OnMouseDown += Start;
+        }
         private void GameOver()
         {
             Debug.WriteLine("GameOver");
         }
+        private void CloseGame()
+        {
+            OnUnload();
+            Close();
+        }
+        private void Start()
+        {
+            start = false;
+            levelChoose = true;
+            clearButtons = true;
+            foreach (var but in buttons)
+                but.Delete();
+        }
+        private void Level1()
+        {
+            firstLevel = true;
+            scores = 0;
+            foreach (var but in buttons)
+                but.Delete();
+            clearButtons = true;
+            ball = new Ball(300, 30, 10, 10, Color4.Yellow, ballTextureID);
+            paddle = new Paddle(250, 10, 100, 10, Color4.Aqua, brickTextureID, ortoWidth);
+
+            dx = rnd.Next(-3, 3);
+            dy = 1;
+            for (int i = 0; i < 6; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    blocks.Add(new Blok(50 + 60 * j, 350 + 60 * i, 50, 50, Color4.DarkMagenta, brickTextureID));
+                }
+            }
+        }
+        private void Level2()
+        {
+            secondLevel = true;
+            scores = 0;
+            foreach (var but in buttons)
+                but.Delete();
+            clearButtons = true;
+            ball = new Ball(300, 30, 10, 10, Color4.Yellow, ballTextureID);
+            paddle = new Paddle(250, 10, 100, 10, Color4.Aqua, brickTextureID, ortoWidth);
+
+            dx = rnd.Next(-3, 3);
+            dy = 1;
+            for (int i = 0; i < 6; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    if (i == 0 && j == 0 || i == 0 && j == 8 || i == 6 && j == 0 || i == 6 && j == 8)
+                        continue;
+                    blocks.Add(new Blok(50 + 60 * j, 350 + 60 * i, 50, 50, Color4.DarkMagenta, brickTextureID));
+                }
+            }
+            uberBlocks.Add(new Blok(50 + 60 * 0, 350 + 60 * 0, 50, 50, Color4.DarkMagenta, uberBrickTextureID));
+            uberBlocks.Add(new Blok(50 + 60 * 7, 350 + 60 * 0, 50, 50, Color4.DarkMagenta, uberBrickTextureID));
+            uberBlocks.Add(new Blok(50 + 60 * 7, 350 + 60 * 5, 50, 50, Color4.DarkMagenta, uberBrickTextureID));
+            uberBlocks.Add(new Blok(50 + 60 * 0, 350 + 60 * 5, 50, 50, Color4.DarkMagenta, uberBrickTextureID));
+            for(int i=0;i<10;i+=2)
+            {
+                uberBlocks.Add(new Blok(50 + 60 * i, 250 , 50, 50, Color4.DarkMagenta, uberBrickTextureID));
+            }
+        }
+        private void ReturnToMainMenu()
+        {
+            secondLevel = false;
+            firstLevel = false;
+            start = true;
+            levelChoose = false;
+            clearButtons = false;
+            foreach (var but in buttons)
+                but.Delete();
+            gameOver = false;
+            gameWin = false;
+            Title = "Acranoid";
+
+            blocks.Clear();
+            uberBlocks.Clear();
+
+
+            StartScreen();
+        }
+
     }
     public class Blok
     {
@@ -242,7 +452,7 @@ namespace kurs
             this.color = color;
             this.textureID = textureID;
             cords = new float[] { x, y, x, y + height, x + width, y + height, x + width, y };
-            textCords = new float[] {0f,1f,0f,0f,1f,0f,1f,1f };
+            textCords = new float[] { 0f, 1f, 0f, 0f, 1f, 0f, 1f, 1f };
             bufferCordsID = GL.GenBuffer();// генерация индефикатора
             GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);//тип буфера, индефикатор
             GL.BufferData(BufferTarget.ArrayBuffer, cords.Length * sizeof(float), cords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
@@ -284,7 +494,7 @@ namespace kurs
             GL.BindTexture(TextureTarget.Texture2D, textureID);
 
             GL.BindVertexArray(vaoID);
-           
+
             GL.DrawArrays(PrimitiveType.Polygon, 0, 4);
             GL.BindVertexArray(0);
 
@@ -296,8 +506,7 @@ namespace kurs
             GL.Disable(EnableCap.Texture2D);
 
         }
-        
-        public void Delete()
+        public virtual void Delete()
         {
             GL.DeleteBuffer(bufferCordsID);
             GL.DeleteBuffer(bufferTextureID);
@@ -315,11 +524,10 @@ namespace kurs
     public class Ball : Blok
     {
         public float[] Cords { get => cords; set => cords = value; }
-        public override float  X { get => cords[0]; set => cords[0] = value; }
+        public override float X { get => cords[0]; set => cords[0] = value; }
         public override float Y { get => cords[1]; set => cords[1] = value; }
-        public Ball(float x, float y, float width, float height, Color4 color, int textureID) : base (x,y,width,height,color, textureID)
+        public Ball(float x, float y, float width, float height, Color4 color, int textureID) : base(x, y, width, height, color, textureID)
         {
-
         }
         public void Move(Vector2 vector)
         {
@@ -337,20 +545,24 @@ namespace kurs
     {
         public override float X { get => cords[0]; set => cords[0] = value; }
         public override float Y { get => cords[1]; set => cords[1] = value; }
-        public Paddle(float x, float y, float width, float height, Color4 color, int textureID) : base(x,y,width,height,color, textureID)
+        int ortoWidth;
+        public Paddle(float x, float y, float width, float height, Color4 color, int textureID, int ortoWidth) : base(x, y, width, height, color, textureID)
         {
-
+            this.ortoWidth = ortoWidth;
         }
         public void Move(Vector2 vector)
         {
-            for (int i = 0; i < cords.Length; i += 2)
+            if (cords[0] + vector.X>= 0 && cords[0]+Width + vector.X <= ortoWidth)
             {
-                cords[i] += vector.X;
-                cords[i + 1] += vector.Y;
+                for (int i = 0; i < cords.Length; i += 2)
+                {
+                    cords[i] += vector.X;
+                    cords[i + 1] += vector.Y;
+                }
+                GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);//тип буфера, индефикатор
+                GL.BufferData(BufferTarget.ArrayBuffer, cords.Length * sizeof(float), cords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
+                GL.BindBuffer(BufferTarget.ArrayBuffer, 0); 
             }
-            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferCordsID);//тип буфера, индефикатор
-            GL.BufferData(BufferTarget.ArrayBuffer, cords.Length * sizeof(float), cords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
         public override bool IsPointIn(float pointX, float pointY)
         {
@@ -397,6 +609,27 @@ namespace kurs
 
             return id;
         }
-        
+
+    }
+
+    delegate void MouseDelegate();
+    class Button: Blok
+    {
+        float x, y, width, height;
+        Color4 color;
+
+        public MouseDelegate OnMouseDown;
+        public Button(float x, float y, float width, float height, Color4 color, int textureID) : base(x, y, width, height, color, textureID)
+        {
+        }
+        public override bool IsPointIn(float pointX, float pointY)
+        {
+            if (pointX < cords[0]) return false;
+            if (pointY < cords[1]) return false;
+            if (pointX > cords[0] + Width) return false;
+            if (pointY > cords[1] + Height) return false;
+            return true;
+        }
+
     }
 }

@@ -11,7 +11,7 @@ namespace kurs
             NativeWindowSettings nSettings = new NativeWindowSettings()
             {
                 Title = "Acranoid",
-                Size = (800, 600),
+                Size = (1280, 1024),
                 Flags = ContextFlags.Default,
                 Profile = ContextProfile.Compatability,
             };
