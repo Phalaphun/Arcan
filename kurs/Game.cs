@@ -24,7 +24,7 @@ namespace kurs
         public int OrtoWidth { get; }
         double deltaX, deltaY;
         Vector2 cursor;
-        bool gameOver = false, isPaused = false, start=true, levelChoose=false,firstLevel=false,secondLevel=false, clearButtons=false, gameWin=false;
+        bool gameOver = false, isPaused = false, start=true, levelChoose=false,level=false, clearButtons=false, gameWin=false;
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeSettings)
         : base(gameWindowSettings, nativeSettings)
         {
@@ -76,7 +76,7 @@ namespace kurs
                 buttons[2].OnMouseDown += CloseGame;
                 levelChoose = false;
             }
-            if(firstLevel||secondLevel)
+            if(level)
             {
                 GameMaster();
             }
@@ -90,7 +90,7 @@ namespace kurs
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             //GameMasterRender();
-            if(firstLevel || secondLevel)
+            if(level)
             {
                 GameMasterRender();
             }
@@ -361,7 +361,7 @@ namespace kurs
         }
         private void Level1()
         {
-            firstLevel = true;
+            level = true;
             scores = 0;
             foreach (var but in buttons)
                 but.Delete();
@@ -381,7 +381,7 @@ namespace kurs
         }
         private void Level2()
         {
-            secondLevel = true;
+            level = true;
             scores = 0;
             foreach (var but in buttons)
                 but.Delete();
@@ -395,7 +395,7 @@ namespace kurs
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    if (i == 0 && j == 0 || i == 0 && j == 8 || i == 6 && j == 0 || i == 6 && j == 8)
+                    if (i == 0 && j == 0 || i == 0 && j == 7 || i == 5 && j == 0 || i == 5 && j == 7)
                         continue;
                     blocks.Add(new Blok(50 + 60 * j, 350 + 60 * i, 50, 50, Color4.DarkMagenta, brickTextureID));
                 }
@@ -411,8 +411,7 @@ namespace kurs
         }
         private void ReturnToMainMenu()
         {
-            secondLevel = false;
-            firstLevel = false;
+            level = false;   
             start = true;
             levelChoose = false;
             clearButtons = false;
