@@ -5,6 +5,7 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace kurs
 {
@@ -19,6 +20,7 @@ namespace kurs
         bool gameOver = false;
         int ortoWidth = 600;
         int ortoHeight = 800;
+        int ballTextureID, BrickTextureID;
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeSettings)
         : base(gameWindowSettings, nativeSettings)
         {
@@ -45,6 +47,9 @@ namespace kurs
                     blocks.Add(new Blok(50+60*j,350+60*i,50,50,Color4.DarkMagenta));
                 }
             }
+
+            ballTextureID = ContentPipe.LoadTexture(@"Content\ball.png");
+            BrickTextureID = ContentPipe.LoadTexture(@"Content\brick.jpg");
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
@@ -60,8 +65,13 @@ namespace kurs
                         
                     }
                 }
-                blocks.Remove(delBlock);
-                delBlock = null;
+                if (delBlock != null)
+                {
+                    delBlock.DeleteVBO();
+                    blocks.Remove(delBlock);
+                    delBlock = null;
+                }
+                
                 if (KeyboardState.IsKeyDown(Keys.Escape))
                     Close();
                 if (KeyboardState.IsKeyDown(Keys.Right))
@@ -257,7 +267,6 @@ namespace kurs
             if (pointY > y + height) return false;
             return true;
         }
-
     }
     public class Ball : Blok
     {
@@ -306,6 +315,41 @@ namespace kurs
             if (pointX > cords[0] + Width) return false;
             if (pointY > cords[1] + Height) return false;
             return true;
+        }
+    }
+    public class ContentPipe
+    {
+        static public int LoadTexture(string path)
+        {
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"File not found at '{path}'");
+            }
+
+            int id = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, id);
+
+            Bitmap bmp = new Bitmap(path);
+            BitmapData data = bmp.LockBits(
+                new Rectangle(0, 0, bmp.Width, bmp.Height),
+                ImageLockMode.ReadOnly,
+                System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
+                data.Width, data.Height, 0,
+                OpenTK.Graphics.OpenGL.PixelFormat.Rgba,
+                PixelType.UnsignedByte,
+                data.Scan0);
+
+            bmp.UnlockBits(data);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+            return id;
         }
     }
 }
