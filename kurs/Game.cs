@@ -19,7 +19,7 @@ namespace kurs
         List<Button> buttons = new List<Button>(); //Создаем динамический массив в котором будем хранить кнопки для менюшек, крмое кнопок гейм овера и победы
         Button gameOverButton; // Создаем кнопку гейм овер
         Button gameWinButton; // Создаем кнопку гейм вина 
-        int dx, dy, ortoWidth = 600, ortoHeight = 800, ballTextureID, brickTextureID,uberBrickTextureID, StartGameID, CloseGameID, Level1ID,Level2ID,scores, GameOverID,GameWinID; // 
+        int dx, dy, ortoWidth = 600, ortoHeight = 800, ballTextureID, brickTextureID,uberBrickTextureID, StartGameID, CloseGameID, Level1ID,Level2ID,scores, GameOverID,GameWinID; //создаём кучу разных переменных dx dy -преращения для измненеия координат шарика ortoWidth и ortoHeight это размеры сетки игрового поля - пределы координатных осей типа, всё что с ID в конце - айдишники дял текстур, score - очки, отобразаются в названии формы
         double deltaX, deltaY;
         Vector2 cursor;
         bool gameOver = false, isPaused = false, levelChoose=false,level=false, clearButtons=false, gameWin=false;
