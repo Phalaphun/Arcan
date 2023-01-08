@@ -11,7 +11,6 @@ namespace kurs
 {
     class Game : GameWindow
     {
-        //Blok blok1, blok2;
         Ball ball;
         Paddle paddle;
         Random rnd;
@@ -21,7 +20,6 @@ namespace kurs
         Button gameOverButton;
         Button gameWinButton;
         int dx, dy, ortoWidth = 600, ortoHeight = 800, ballTextureID, brickTextureID,uberBrickTextureID, StartGameID, CloseGameID, Level1ID,Level2ID,scores, GameOverID,GameWinID;
-        public int OrtoWidth { get; }
         double deltaX, deltaY;
         Vector2 cursor;
         bool gameOver = false, isPaused = false, start=true, levelChoose=false,level=false, clearButtons=false, gameWin=false;
@@ -79,17 +77,12 @@ namespace kurs
             if(level)
             {
                 GameMaster();
-            }
-
-            
-            
+            } 
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            //GameMasterRender();
             if(level)
             {
                 GameMasterRender();
@@ -107,10 +100,10 @@ namespace kurs
                 switch (e.Key)
                 {
                     case Keys.A:
-                        paddle.Move(new Vector2(-6f, 0));
+                        paddle.Move(new Vector2(-8f, 0));
                         break;
                     case Keys.D:
-                        paddle.Move(new Vector2(6f, 0));
+                        paddle.Move(new Vector2(8f, 0));
                         break;
                     case Keys.P:
                         isPaused = !isPaused;
@@ -118,7 +111,6 @@ namespace kurs
                     case Keys.Escape:
                         CloseGame();
                         break;
-
                 }
             }
         }
@@ -145,6 +137,8 @@ namespace kurs
             GL.DeleteTexture(GameWinID);
             gameWinButton.Delete();
             gameOverButton.Delete();
+            foreach (var b in buttons)
+                b.Delete();
         }
         protected override void OnResize(ResizeEventArgs e)
         {
@@ -258,7 +252,6 @@ namespace kurs
                         Debug.WriteLine("Первая треть"); dy = 1; dx = -3;
                     }
 
-
                 }
             }
 
@@ -293,19 +286,18 @@ namespace kurs
                         Title = "Acranoid           Scores: " + scores.ToString();
                         delBlock = null;
                     }
-
+#if DEBUG
                     if (KeyboardState.IsKeyDown(Keys.Right))
-                        ball.Move(new Vector2(1f, 0));
+                        ball.Move(new Vector2(2f, 0));
                     if (KeyboardState.IsKeyDown(Keys.Left))
-                        ball.Move(new Vector2(-1f, 0));
+                        ball.Move(new Vector2(-2f, 0));
                     if (KeyboardState.IsKeyDown(Keys.Down))
-                        ball.Move(new Vector2(0, -1f));
+                        ball.Move(new Vector2(0, -2f));
                     if (KeyboardState.IsKeyDown(Keys.Up))
-                        ball.Move(new Vector2(0, 1f));
+                        ball.Move(new Vector2(0, 2f));
                     if (KeyboardState.IsKeyDown(Keys.E))
                         dx = rnd.Next(-3, 3);
-
-
+#endif
                     ball.Move(new Vector2(dx / 2f, dy / 2f));
 
                     CheackAllBlocks();
@@ -341,10 +333,6 @@ namespace kurs
             buttons.Add(new Button(230, 300, 100, 100, Color4.Gray, CloseGameID));
             buttons[1].OnMouseDown += CloseGame;
             buttons[0].OnMouseDown += Start;
-        }
-        private void GameOver()
-        {
-            Debug.WriteLine("GameOver");
         }
         private void CloseGame()
         {
@@ -388,7 +376,6 @@ namespace kurs
             clearButtons = true;
             ball = new Ball(300, 30, 10, 10, Color4.Yellow, ballTextureID);
             paddle = new Paddle(250, 10, 100, 10, Color4.Aqua, brickTextureID, ortoWidth);
-
             dx = rnd.Next(-3, 3);
             dy = 1;
             for (int i = 0; i < 6; i++)
@@ -423,7 +410,6 @@ namespace kurs
 
             blocks.Clear();
             uberBlocks.Clear();
-
 
             StartScreen();
         }
@@ -610,13 +596,11 @@ namespace kurs
         }
 
     }
-
     delegate void MouseDelegate();
     class Button: Blok
     {
         float x, y, width, height;
         Color4 color;
-
         public MouseDelegate OnMouseDown;
         public Button(float x, float y, float width, float height, Color4 color, int textureID) : base(x, y, width, height, color, textureID)
         {
@@ -629,6 +613,5 @@ namespace kurs
             if (pointY > cords[1] + Height) return false;
             return true;
         }
-
     }
 }
