@@ -11,15 +11,15 @@ namespace kurs
 {
     class Game : GameWindow
     {
-        Ball ball;
-        Paddle paddle;
-        Random rnd;
-        List<Blok> blocks = new List<Blok>();
-        List<Blok> uberBlocks = new List<Blok>();
-        List<Button> buttons = new List<Button>();
-        Button gameOverButton;
-        Button gameWinButton;
-        int dx, dy, ortoWidth = 600, ortoHeight = 800, ballTextureID, brickTextureID,uberBrickTextureID, StartGameID, CloseGameID, Level1ID,Level2ID,scores, GameOverID,GameWinID;
+        Ball ball;  // Создаём мяч, но не выделяем под него память. Просто говорим компилятору что будет такая переменная чтобы спокойно ею пользоваться в пределах класса
+        Paddle paddle;// Создаём отскок-панельку, но не выделяем под него память. Просто говорим компилятору что будет такая переменная чтобы спокойно ею пользоваться в пределах класса
+        Random rnd;// Создаём рандомайзер, но не выделяем под него память. Просто говорим компилятору что будет такая переменная чтобы спокойно ею пользоваться в пределах класса
+        List<Blok> blocks = new List<Blok>(); //Создаем динамический массив в котором будем хранить блоки
+        List<Blok> uberBlocks = new List<Blok>();//Создаем динамический массив в котором будем хранить неразрушаемые блоки
+        List<Button> buttons = new List<Button>(); //Создаем динамический массив в котором будем хранить кнопки для менюшек, крмое кнопок гейм овера и победы
+        Button gameOverButton; // Создаем кнопку гейм овер
+        Button gameWinButton; // Создаем кнопку гейм вина 
+        int dx, dy, ortoWidth = 600, ortoHeight = 800, ballTextureID, brickTextureID,uberBrickTextureID, StartGameID, CloseGameID, Level1ID,Level2ID,scores, GameOverID,GameWinID; // 
         double deltaX, deltaY;
         Vector2 cursor;
         bool gameOver = false, isPaused = false, levelChoose=false,level=false, clearButtons=false, gameWin=false;
