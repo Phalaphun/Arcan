@@ -447,12 +447,10 @@ namespace kurs
             GL.BufferData(BufferTarget.ArrayBuffer, cords.Length * sizeof(float), cords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
-            //GL.BindTexture(TextureTarget.Texture2D, textureID);
             bufferTextureID = GL.GenBuffer(); // генерация идефикатора для текстурного массива
             GL.BindBuffer(BufferTarget.ArrayBuffer, bufferTextureID);
             GL.BufferData(BufferTarget.ArrayBuffer, textCords.Length * sizeof(float), textCords, BufferUsageHint.StaticDraw);//тип, байты, данны, тип доступа
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            //GL.BindTexture(TextureTarget.Texture2D, 0);
 
             vaoID = GL.GenVertexArray();
             GL.BindVertexArray(vaoID);
